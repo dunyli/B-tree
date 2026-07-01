@@ -6,12 +6,12 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
-#include "btree.h"           /* Подключаем публичный API */
+#include "btree.h"           
 #include "btree_node.h"      /* Подключаем для работы с узлами */
 #include "btree_utils.h"     /* Подключаем вспомогательные функции */
 #include "btree_delete.h"    /* Подключаем функции удаления */
 #include <stdlib.h>          /* malloc, free */
-#include <stdio.h>           /* printf */
+#include <stdio.h>           
 
  /*
   * Полная структура B-дерева (скрытая от пользователя)
@@ -27,8 +27,7 @@ struct BTree {
 /*
  * СОЗДАНИЕ B-ДЕРЕВА
  */
-BTree*
-btree_create(int degree)
+BTree* btree_create(int degree)
 {
     if (degree < 2) degree = 2;  /* Минимальная степень — 2 (иначе дерево вырождается) */
 
@@ -54,8 +53,7 @@ btree_create(int degree)
 /*
  * ОСВОБОЖДЕНИЕ ПАМЯТИ
  */
-void
-btree_destroy(BTree* tree)
+void btree_destroy(BTree* tree)
 {
     if (!tree) return;           /* Если NULL — ничего не делаем */
     btree_node_destroy(tree->root);  /* Рекурсивное удаление всех узлов */
@@ -65,8 +63,7 @@ btree_destroy(BTree* tree)
 /*
  * ВСТАВКА КЛЮЧА И ЗНАЧЕНИЯ
  */
-bool
-btree_insert(BTree* tree, int key, int value)
+bool btree_insert(BTree* tree, int key, int value)
 {
     if (!tree) return false;     /* Проверка существования дерева */
 
@@ -98,8 +95,7 @@ btree_insert(BTree* tree, int key, int value)
 /*
  * ПОИСК ЗНАЧЕНИЯ ПО КЛЮЧУ
  */
-bool
-btree_search(BTree* tree, int key, int* out_value)
+bool btree_search(BTree* tree, int key, int* out_value)
 {
     if (!tree || !tree->root) return false;  /* Проверка */
 
@@ -125,8 +121,7 @@ btree_search(BTree* tree, int key, int* out_value)
 /*
  * УДАЛЕНИЕ КЛЮЧА
  */
-bool
-btree_delete(BTree* tree, int key)
+bool btree_delete(BTree* tree, int key)
 {
     if (!tree || !tree->root) return false;  /* Проверка */
     if (!btree_contains(tree, key)) return false;  /* Проверяем, есть ли ключ */
@@ -158,8 +153,7 @@ btree_delete(BTree* tree, int key)
 /*
  * ПРОВЕРКА НАЛИЧИЯ КЛЮЧА (обёртка над btree_search)
  */
-bool
-btree_contains(BTree* tree, int key)
+bool btree_contains(BTree* tree, int key)
 {
     return btree_search(tree, key, NULL);  /* Вызываем поиск без сохранения значения */
 }
@@ -167,8 +161,7 @@ btree_contains(BTree* tree, int key)
 /*
  * ПОЛУЧЕНИЕ КОЛИЧЕСТВА ЭЛЕМЕНТОВ
  */
-int
-btree_size(BTree* tree)
+int btree_size(BTree* tree)
 {
     return tree ? tree->size : 0;  /* Если дерево NULL — возвращаем 0 */
 }
@@ -176,8 +169,7 @@ btree_size(BTree* tree)
 /*
  * ПОЛУЧЕНИЕ ВЫСОТЫ ДЕРЕВА
  */
-int
-btree_height(BTree* tree)
+int btree_height(BTree* tree)
 {
     return tree ? tree->height : 0;
 }
@@ -185,8 +177,7 @@ btree_height(BTree* tree)
 /*
  * ПОЛУЧЕНИЕ СТЕПЕНИ ДЕРЕВА
  */
-int
-btree_degree(BTree* tree)
+int btree_degree(BTree* tree)
 {
     return tree ? tree->degree : 0;
 }
@@ -194,8 +185,7 @@ btree_degree(BTree* tree)
 /*
  * ПОЛУЧЕНИЕ КОЛИЧЕСТВА УЗЛОВ
  */
-int
-btree_nodes(BTree* tree)
+int btree_nodes(BTree* tree)
 {
     return tree ? tree->node_count : 0;
 }
@@ -203,15 +193,14 @@ btree_nodes(BTree* tree)
 /*
  * ПЕЧАТЬ СТАТИСТИКИ ДЕРЕВА
  */
-void
-btree_print_stats(BTree* tree)
+void btree_print_stats(BTree* tree)
 {
     if (!tree) {
         printf("Дерево не инициализировано\n");
         return;
     }
 
-    printf("=== СТАТИСТИКА B-ДЕРЕВА ===\n");
+    printf(" СТАТИСТИКА B-ДЕРЕВА n");
     printf("  Степень: %d\n", tree->degree);
     printf("  Количество элементов: %d\n", tree->size);
     printf("  Высота: %d\n", tree->height);
@@ -222,15 +211,14 @@ btree_print_stats(BTree* tree)
 /*
  * ПЕЧАТЬ ДЕРЕВА (для отладки)
  */
-void
-btree_print(BTree* tree)
+void btree_print(BTree* tree)
 {
     if (!tree || !tree->root) {
         printf("Дерево пустое\n");
         return;
     }
 
-    printf("\n=== B-ДЕРЕВО ===\n");
+    printf("\n B-ДЕРЕВО \n");
     printf("Степень: %d, элементов: %d, высота: %d\n",
         tree->degree, tree->size, tree->height);
     btree_print_node(tree->root, 0, "R-");  /* Рекурсивная печать с корня */

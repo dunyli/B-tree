@@ -9,8 +9,7 @@
  * Создание нового узла B-дерева
  * Выделяет память под узел и все массивы
  */
-BTreeNode*
-btree_node_create(int degree, bool is_leaf)
+BTreeNode* btree_node_create(int degree, bool is_leaf)
 {
     BTreeNode* node = (BTreeNode*)malloc(sizeof(BTreeNode));  /* Выделяем память под узел */
     if (!node) return NULL;                                   /* Проверка выделения */
@@ -45,8 +44,7 @@ btree_node_create(int degree, bool is_leaf)
 /*
  * Освобождение узла и всех потомков (рекурсивно)
  */
-void
-btree_node_destroy(BTreeNode* node)
+void btree_node_destroy(BTreeNode* node)
 {
     if (!node) return;  /* Если узел NULL — ничего не делаем */
 
@@ -68,8 +66,7 @@ btree_node_destroy(BTreeNode* node)
  * Поиск ключа в узле (бинарный поиск по отсортированному массиву)
  * Возвращает индекс ключа в массиве или -1 если не найден
  */
-int
-btree_node_find_key(BTreeNode* node, int key)
+int btree_node_find_key(BTreeNode* node, int key)
 {
     int left = 0;                      /* Левая граница поиска (начало) */
     int right = node->key_count - 1;   /* Правая граница поиска (конец) */
@@ -88,8 +85,7 @@ btree_node_find_key(BTreeNode* node, int key)
  * Поиск позиции для вставки ключа (бинарный поиск)
  * Возвращает индекс, куда нужно вставить новый ключ
  */
-int
-btree_node_find_insert_pos(BTreeNode* node, int key)
+int btree_node_find_insert_pos(BTreeNode* node, int key)
 {
     int i = 0;
     /* Проходим по ключам, пока не найдём место (первый ключ > key) */

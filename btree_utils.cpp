@@ -11,8 +11,7 @@
   * Поиск минимального ключа в поддереве
   * Идём по левым потомкам до самого левого листа
   */
-BTreeNode*
-btree_find_minimum(BTreeNode* node)
+BTreeNode* btree_find_minimum(BTreeNode* node)
 {
     /* Если узел лист — возвращаем его */
     if (node->is_leaf)
@@ -25,8 +24,7 @@ btree_find_minimum(BTreeNode* node)
  * Поиск максимального ключа в поддереве
  * Идём по правым потомкам до самого правого листа
  */
-BTreeNode*
-btree_find_maximum(BTreeNode* node)
+BTreeNode* btree_find_maximum(BTreeNode* node)
 {
     /* Если узел лист — возвращаем его */
     if (node->is_leaf)
@@ -39,8 +37,7 @@ btree_find_maximum(BTreeNode* node)
  * Подсчёт количества узлов в дереве
  * Рекурсивно обходит всё дерево
  */
-int
-btree_count_nodes(BTreeNode* node)
+int btree_count_nodes(BTreeNode* node)
 {
     if (!node) return 0;  /* Если нет узла — 0 */
 
@@ -60,8 +57,7 @@ btree_count_nodes(BTreeNode* node)
  * Высота = количество уровней (все листья на одном уровне)
  * Рекурсивно спускаемся к самому левому листу
  */
-int
-btree_calculate_height(BTreeNode* node)
+int btree_calculate_height(BTreeNode* node)
 {
     /* Базовый случай: лист или NULL */
     if (!node || node->is_leaf)
@@ -74,8 +70,7 @@ btree_calculate_height(BTreeNode* node)
  * Рекурсивная печать узла и всех его потомков
  * Используется для отладки и визуализации структуры
  */
-void
-btree_print_node(BTreeNode* node, int level, const char* side)
+void btree_print_node(BTreeNode* node, int level, const char* side)
 {
     if (!node) return;  /* Если узел NULL — выходим */
 
@@ -113,8 +108,7 @@ btree_print_node(BTreeNode* node, int level, const char* side)
  * 3. Ключи после среднего перемещаются в новый узел
  * 4. Связи между узлами обновляются
  */
-void
-btree_split_child(BTreeNode* parent, int child_idx, BTreeNode* child)
+void btree_split_child(BTreeNode* parent, int child_idx, BTreeNode* child)
 {
     int degree = child->degree;   /* Степень дерева */
     int t = degree;               /* t — минимальная степень */
@@ -182,8 +176,7 @@ btree_split_child(BTreeNode* parent, int child_idx, BTreeNode* child)
  * Рекурсивная функция, которая вставляет ключ в поддерево.
  * Предполагается, что узел не полный (key_count < 2t-1)
  */
-void
-btree_insert_nonfull(BTreeNode* node, int key, int value)
+void btree_insert_nonfull(BTreeNode* node, int key, int value)
 {
     int i = node->key_count - 1;  /* Индекс последнего ключа */
 

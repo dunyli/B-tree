@@ -13,8 +13,7 @@
   *
   * Используется, когда у узла мало ключей, а у левого брата есть лишние
   */
-void
-btree_borrow_from_left(BTreeNode* parent, int child_idx)
+void btree_borrow_from_left(BTreeNode* parent, int child_idx)
 {
     BTreeNode* child = parent->children[child_idx];           /* Текущий узел */
     BTreeNode* left_sibling = parent->children[child_idx - 1]; /* Левый брат */
@@ -52,8 +51,7 @@ btree_borrow_from_left(BTreeNode* parent, int child_idx)
 /*
  * ЗАИМСТВОВАНИЕ КЛЮЧА ОТ ПРАВОГО БРАТА (симметрично)
  */
-void
-btree_borrow_from_right(BTreeNode* parent, int child_idx)
+void btree_borrow_from_right(BTreeNode* parent, int child_idx)
 {
     BTreeNode* child = parent->children[child_idx];            /* Текущий узел */
     BTreeNode* right_sibling = parent->children[child_idx + 1]; /* Правый брат */
@@ -93,8 +91,7 @@ btree_borrow_from_right(BTreeNode* parent, int child_idx)
  *
  * Используется, когда оба брата не могут отдать ключи
  */
-void
-btree_merge_nodes(BTreeNode* parent, int child_idx)
+void btree_merge_nodes(BTreeNode* parent, int child_idx)
 {
     BTreeNode* left_child = parent->children[child_idx];      /* Левый потомок */
     BTreeNode* right_child = parent->children[child_idx + 1]; /* Правый потомок */
@@ -147,8 +144,7 @@ btree_merge_nodes(BTreeNode* parent, int child_idx)
  * 2. Ключ во внутреннем узле — заменяем предшественником или преемником
  * 3. Ключ не в текущем узле — идём в потомка, при необходимости перебалансируем
  */
-bool
-btree_delete_from_subtree(BTreeNode* node, int key, int degree, int* child_height)
+bool btree_delete_from_subtree(BTreeNode* node, int key, int degree, int* child_height)
 {
     int i = btree_node_find_insert_pos(node, key);  /* Находим позицию ключа */
 
