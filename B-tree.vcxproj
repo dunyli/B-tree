@@ -141,11 +141,13 @@
   <ItemGroup>
     <ClCompile Include="B-tree.cpp" />
     <ClCompile Include="btree.cpp" />
+    <ClCompile Include="btree_delete.cpp" />
     <ClCompile Include="btree_node.cpp" />
     <ClCompile Include="btree_utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="btree.h" />
+    <ClInclude Include="btree_delete.h" />
     <ClInclude Include="btree_node.h" />
     <ClInclude Include="btree_utils.h" />
   </ItemGroup>
