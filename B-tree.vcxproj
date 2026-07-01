@@ -146,6 +146,7 @@
   <ItemGroup>
     <ClInclude Include="btree.h" />
     <ClInclude Include="btree_node.h" />
+    <ClInclude Include="btree_utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
