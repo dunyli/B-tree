@@ -64,4 +64,4 @@ int btree_iterator_key(BTreeIterator* iter);
 int btree_iterator_value(BTreeIterator* iter);
 bool btree_iterator_valid(BTreeIterator* iter);
 
-#endif /* BTREE_H */
+#endif
