@@ -4,144 +4,135 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
-#include "btree_delete.h"   /* Заголовочный файл */
-#include "btree_node.h"     /* Для работы с узлами */
-#include "btree_utils.h"    /* Для вспомогательных функций */
-#include <stdlib.h>         /* Для free */
+#include "btree_delete.h"
+#include "btree_utils.h"
+#include <stdlib.h>
 
  /*
   * ЗАИМСТВОВАНИЕ КЛЮЧА ОТ ЛЕВОГО БРАТА
   *
-  * Используется, когда у узла мало ключей (< t-1),
-  * а у левого брата есть лишние ключи (>= t)
-  *
-  * Переносим один ключ от левого брата через родителя
+  * Используется, когда у узла мало ключей, а у левого брата есть лишние
   */
 void
 btree_borrow_from_left(BTreeNode* parent, int child_idx)
 {
-    BTreeNode* child = parent->children[child_idx];
-    BTreeNode* left_sibling = parent->children[child_idx - 1];
+    BTreeNode* child = parent->children[child_idx];           /* Текущий узел */
+    BTreeNode* left_sibling = parent->children[child_idx - 1]; /* Левый брат */
 
-    /* 1. Сдвигаем ключи child вправо, освобождая место в начале */
+    /* Сдвигаем ключи child вправо, освобождая место в начале */
     for (int i = child->key_count - 1; i >= 0; i--) {
         child->keys[i + 1] = child->keys[i];
         child->values[i + 1] = child->values[i];
     }
 
-    /* 2. Сдвигаем потомков child вправо */
+    /* Сдвигаем потомков child вправо */
     if (!child->is_leaf) {
         for (int i = child->key_count; i >= 0; i--) {
             child->children[i + 1] = child->children[i];
         }
     }
 
-    /* 3. Переносим ключ из родителя в child (на позицию 0) */
+    /* Переносим ключ из родителя в child */
     child->keys[0] = parent->keys[child_idx - 1];
     child->values[0] = parent->values[child_idx - 1];
 
-    /* 4. Переносим последний ключ из левого брата в родителя */
+    /* Переносим последний ключ из левого брата в родителя */
     parent->keys[child_idx - 1] = left_sibling->keys[left_sibling->key_count - 1];
     parent->values[child_idx - 1] = left_sibling->values[left_sibling->key_count - 1];
 
-    /* 5. Переносим последнего потомка из левого брата в child */
+    /* Переносим последнего потомка из левого брата в child */
     if (!child->is_leaf) {
         child->children[0] = left_sibling->children[left_sibling->key_count];
     }
 
-    /* 6. Обновляем счётчики ключей */
-    child->key_count++;                /* У child стало на 1 больше */
-    left_sibling->key_count--;         /* У левого брата на 1 меньше */
+    child->key_count++;         /* У child стало на 1 больше */
+    left_sibling->key_count--;  /* У левого брата на 1 меньше */
 }
 
 /*
- * ЗАИМСТВОВАНИЕ КЛЮЧА ОТ ПРАВОГО БРАТА
- *
- * Симметрично заимствованию от левого брата
+ * ЗАИМСТВОВАНИЕ КЛЮЧА ОТ ПРАВОГО БРАТА (симметрично)
  */
 void
 btree_borrow_from_right(BTreeNode* parent, int child_idx)
 {
-    BTreeNode* child = parent->children[child_idx];
-    BTreeNode* right_sibling = parent->children[child_idx + 1];
+    BTreeNode* child = parent->children[child_idx];            /* Текущий узел */
+    BTreeNode* right_sibling = parent->children[child_idx + 1]; /* Правый брат */
 
-    /* 1. Переносим ключ из родителя в child (в конец) */
+    /* Переносим ключ из родителя в child (в конец) */
     child->keys[child->key_count] = parent->keys[child_idx];
     child->values[child->key_count] = parent->values[child_idx];
 
-    /* 2. Переносим первого потомка из правого брата в child */
+    /* Переносим первого потомка из правого брата в child */
     if (!child->is_leaf) {
         child->children[child->key_count + 1] = right_sibling->children[0];
     }
 
-    /* 3. Переносим первый ключ из правого брата в родителя */
+    /* Переносим первый ключ из правого брата в родителя */
     parent->keys[child_idx] = right_sibling->keys[0];
     parent->values[child_idx] = right_sibling->values[0];
 
-    /* 4. Сдвигаем ключи правого брата влево */
+    /* Сдвигаем ключи правого брата влево (удаляем первый) */
     for (int i = 0; i < right_sibling->key_count - 1; i++) {
         right_sibling->keys[i] = right_sibling->keys[i + 1];
         right_sibling->values[i] = right_sibling->values[i + 1];
     }
 
-    /* 5. Сдвигаем потомков правого брата влево */
+    /* Сдвигаем потомков правого брата влево */
     if (!right_sibling->is_leaf) {
         for (int i = 0; i < right_sibling->key_count; i++) {
             right_sibling->children[i] = right_sibling->children[i + 1];
         }
     }
 
-    /* 6. Обновляем счётчики ключей */
-    child->key_count++;                 /* У child стало на 1 больше */
-    right_sibling->key_count--;         /* У правого брата на 1 меньше */
+    child->key_count++;          /* У child стало на 1 больше */
+    right_sibling->key_count--;  /* У правого брата на 1 меньше */
 }
 
 /*
  * СЛИЯНИЕ ДВУХ СОСЕДНИХ УЗЛОВ
  *
- * Используется, когда оба брата не могут отдать ключи (у них < t ключей)
- * Два узла сливаются в один, ключ из родителя опускается вниз
+ * Используется, когда оба брата не могут отдать ключи
  */
 void
 btree_merge_nodes(BTreeNode* parent, int child_idx)
 {
-    BTreeNode* left_child = parent->children[child_idx];
-    BTreeNode* right_child = parent->children[child_idx + 1];
+    BTreeNode* left_child = parent->children[child_idx];      /* Левый потомок */
+    BTreeNode* right_child = parent->children[child_idx + 1]; /* Правый потомок */
     int degree = left_child->degree;
 
-    /* 1. Переносим ключ из родителя в левый узел (в конец) */
+    /* Переносим ключ из родителя в левый узел (в конец) */
     left_child->keys[left_child->key_count] = parent->keys[child_idx];
     left_child->values[left_child->key_count] = parent->values[child_idx];
     left_child->key_count++;
 
-    /* 2. Переносим все ключи из правого узла в левый */
+    /* Переносим все ключи из правого узла в левый */
     for (int i = 0; i < right_child->key_count; i++) {
         left_child->keys[left_child->key_count] = right_child->keys[i];
         left_child->values[left_child->key_count] = right_child->values[i];
         left_child->key_count++;
     }
 
-    /* 3. Переносим всех потомков из правого узла в левый */
+    /* Переносим всех потомков из правого узла в левый */
     if (!left_child->is_leaf) {
         for (int i = 0; i <= right_child->key_count; i++) {
             left_child->children[left_child->key_count] = right_child->children[i];
         }
     }
 
-    /* 4. Удаляем ключ из родителя (сдвигаем влево) */
+    /* Удаляем ключ из родителя (сдвигаем влево) */
     for (int i = child_idx; i < parent->key_count - 1; i++) {
         parent->keys[i] = parent->keys[i + 1];
         parent->values[i] = parent->values[i + 1];
     }
 
-    /* 5. Удаляем правого потомка из родителя (сдвигаем влево) */
+    /* Удаляем правого потомка из родителя (сдвигаем влево) */
     for (int i = child_idx + 1; i < parent->key_count; i++) {
         parent->children[i] = parent->children[i + 1];
     }
 
     parent->key_count--;  /* У родителя стало на 1 меньше ключей */
 
-    /* 6. Освобождаем правый узел */
+    /* Освобождаем правый узел (он больше не нужен) */
     free(right_child->keys);
     free(right_child->values);
     free(right_child->children);
@@ -151,30 +142,23 @@ btree_merge_nodes(BTreeNode* parent, int child_idx)
 /*
  * УДАЛЕНИЕ КЛЮЧА ИЗ ПОДДЕРЕВА (основная логика)
  *
- * Это самая сложная операция B-дерева.
- *
- * 3 основных случая:
- *
- * СЛУЧАЙ 1: Ключ в текущем узле
- *   1А: Узел — лист → просто удаляем ключ
- *   1Б: Узел — внутренний → заменяем предшественником или преемником
- *
- * СЛУЧАЙ 2: Ключ не в текущем узле
- *   Идём в потомка, при необходимости перебалансируем (заимствование или слияние)
+ * 3 случая удаления:
+ * 1. Ключ в листе — просто удаляем
+ * 2. Ключ во внутреннем узле — заменяем предшественником или преемником
+ * 3. Ключ не в текущем узле — идём в потомка, при необходимости перебалансируем
  */
 bool
 btree_delete_from_subtree(BTreeNode* node, int key, int degree, int* child_height)
 {
-    int i = btree_node_find_insert_pos(node, key);  /* Позиция для вставки/поиска */
+    int i = btree_node_find_insert_pos(node, key);  /* Находим позицию ключа */
 
-    /* ======================================================
+    /* ============================================================
      * СЛУЧАЙ 1: КЛЮЧ В ТЕКУЩЕМ УЗЛЕ
-     * ====================================================== */
+     * ============================================================ */
     if (i < node->key_count && node->keys[i] == key) {
 
-        /* СЛУЧАЙ 1А: Ключ в листе — просто удаляем */
+        /* 1А: Ключ в листе — просто удаляем (сдвигаем влево) */
         if (node->is_leaf) {
-            /* Сдвигаем все ключи и значения влево, перезаписывая удаляемый */
             for (int j = i; j < node->key_count - 1; j++) {
                 node->keys[j] = node->keys[j + 1];
                 node->values[j] = node->values[j + 1];
@@ -182,7 +166,7 @@ btree_delete_from_subtree(BTreeNode* node, int key, int degree, int* child_heigh
             node->key_count--;  /* Уменьшаем количество ключей */
             return true;
         }
-        /* СЛУЧАЙ 1Б: Ключ во внутреннем узле */
+        /* 1Б: Ключ во внутреннем узле */
         else {
             BTreeNode* left_child = node->children[i];
             BTreeNode* right_child = node->children[i + 1];
@@ -217,26 +201,20 @@ btree_delete_from_subtree(BTreeNode* node, int key, int degree, int* child_heigh
             }
             /* Оба ребёнка имеют недостаточно ключей — сливаем их */
             else {
-                btree_merge_nodes(node, i);
+                btree_merge_nodes(node, i);  /* Сливаем левого и правого */
                 /* Рекурсивно удаляем из левого ребёнка (после слияния) */
                 return btree_delete_from_subtree(left_child, key, degree, child_height);
             }
         }
     }
 
-    /* ======================================================
+    /* ============================================================
      * СЛУЧАЙ 2: КЛЮЧ НЕ В ТЕКУЩЕМ УЗЛЕ — идём в потомка
-     * ====================================================== */
+     * ============================================================ */
     else {
-        /* Если узел лист — ключ не найден */
-        if (node->is_leaf) {
-            return false;
-        }
+        if (node->is_leaf) return false;  /* Если лист — ключа нет */
 
-        /*
-         * Если потомок имеет недостаточно ключей (< t),
-         * нужно перебалансировать поддерево
-         */
+        /* Если потомок имеет недостаточно ключей (< t) — перебалансируем */
         if (node->children[i]->key_count < degree) {
             /* Пытаемся заимствовать у левого брата */
             if (i > 0 && node->children[i - 1]->key_count >= degree) {
@@ -276,6 +254,6 @@ btree_delete_from_subtree(BTreeNode* node, int key, int degree, int* child_heigh
             }
         }
 
-        return result;
+        return result;  /* Возвращаем результат удаления */
     }
 }
