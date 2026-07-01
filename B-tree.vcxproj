@@ -142,6 +142,7 @@
     <ClCompile Include="B-tree.cpp" />
     <ClCompile Include="btree.cpp" />
     <ClCompile Include="btree_node.cpp" />
+    <ClCompile Include="btree_utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="btree.h" />
