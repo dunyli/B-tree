@@ -157,7 +157,7 @@ static void merge_nodes(BTreeNode* parent, int idx)
 }
 
 /*
- * ПЕРЕБАЛАНСИРОВКА (как в C++ fill)
+ * ПЕРЕБАЛАНСИРОВКА
  */
 static void fill_node(BTreeNode* parent, int idx)
 {
@@ -185,7 +185,7 @@ static void fill_node(BTreeNode* parent, int idx)
 }
 
 /*
- * УДАЛЕНИЕ КЛЮЧА - ТОЧНАЯ КОПИЯ ЛОГИКИ ИЗ C++
+ * УДАЛЕНИЕ КЛЮЧА
  */
 bool btree_delete_from_subtree(BTreeNode* node, int key, int degree, int* child_height)
 {
