@@ -1,91 +1,186 @@
 ﻿/*
- * ============================================================================
- *                          btree_node.c (реализация узла)
- * ============================================================================
+ * btree_node.c - реализация узла B-дерева
+ *
+ * Содержит функции для создания, удаления и поиска в узлах B-дерева.
+ * Узел B-дерева содержит ключи, значения и указатели на потомков.
  */
 
 #define _CRT_SECURE_NO_WARNINGS
 
-#include "btree_node.h"
-#include <stdlib.h>
+#include "btree_node.h"   /* Подключаем заголовочный файл */
+#include <stdlib.h>       /* Для malloc, free */
 
-BTreeNode*
-btree_node_create(int degree, bool is_leaf)
+ /*
+  * СОЗДАНИЕ НОВОГО УЗЛА B-ДЕРЕВА
+  *
+  * Выделяет память под узел и все его массивы.
+  *
+  * Параметры:
+  *   degree  - степень дерева (t)
+  *   is_leaf - флаг: является ли узел листом (true - лист, false - внутренний)
+  *
+  * Возвращает: указатель на созданный узел или NULL при ошибке
+  *
+  * Количество ключей в узле: от t-1 до 2t-1
+  * Количество потомков: от t до 2t (на 1 больше, чем ключей)
+  */
+BTreeNode* btree_node_create(int degree, bool is_leaf)
 {
+    /* Выделяем память под структуру узла */
     BTreeNode* node = (BTreeNode*)malloc(sizeof(BTreeNode));
-    if (!node) return NULL;
+    if (!node) return NULL;  /* Проверка выделения */
 
-    node->degree = degree;
-    node->is_leaf = is_leaf;
-    node->key_count = 0;
+    /* Инициализируем поля */
+    node->degree = degree;       /* Сохраняем степень дерева */
+    node->is_leaf = is_leaf;     /* Сохраняем флаг листа */
+    node->key_count = 0;         /* Изначально ключей нет */
 
+    /*
+     * Выделяем память под массив ключей.
+     * Максимальное количество ключей в узле: 2t-1
+     */
     node->keys = (int*)malloc((2 * degree - 1) * sizeof(int));
-    if (!node->keys) { free(node); return NULL; }
+    if (!node->keys) { free(node); return NULL; }  /* Проверка */
 
+    /*
+     * Выделяем память под массив значений.
+     * Значений столько же, сколько ключей.
+     */
     node->values = (int*)malloc((2 * degree - 1) * sizeof(int));
-    if (!node->values) { free(node->keys); free(node); return NULL; }
+    if (!node->values) {
+        free(node->keys);   /* Освобождаем уже выделенное */
+        free(node);
+        return NULL;
+    }
 
+    /*
+     * Выделяем память под массив потомков.
+     * Количество потомков: 2t (на 1 больше, чем ключей)
+     */
     node->children = (BTreeNode**)malloc((2 * degree) * sizeof(BTreeNode*));
-    if (!node->children) { free(node->values); free(node->keys); free(node); return NULL; }
+    if (!node->children) {
+        free(node->values); /* Освобождаем уже выделенное */
+        free(node->keys);
+        free(node);
+        return NULL;
+    }
 
+    /* Инициализируем всех потомков как NULL (для безопасности) */
     for (int i = 0; i < 2 * degree; i++) {
         node->children[i] = NULL;
     }
 
-    return node;
+    return node;  /* Возвращаем созданный узел */
 }
 
 /*
- * Освобождение узла и всех потомков
+ * ОСВОБОЖДЕНИЕ УЗЛА И ВСЕХ ЕГО ПОТОМКОВ (рекурсивно)
  *
- * ВНИМАНИЕ: Освобождаем БЕЗ проверок!
- * Если узел уже был освобождён - это ошибка в логике программы.
+ * Рекурсивно обходит всё поддерево и освобождает память.
+ *
+ * Параметры:
+ *   node - указатель на узел для удаления
+ *
+ * Алгоритм:
+ * 1. Если узел не лист - рекурсивно удаляем всех потомков
+ * 2. Освобождаем массивы ключей, значений и потомков
+ * 3. Освобождаем сам узел
  */
-void
-btree_node_destroy(BTreeNode* node)
+void btree_node_destroy(BTreeNode* node)
 {
-    if (!node) return;
+    if (!node) return;  /* Если узел NULL - ничего не делаем */
 
+    /*
+     * Если узел не лист, у него есть потомки.
+     * Рекурсивно удаляем каждого потомка.
+     * Количество потомков = key_count + 1
+     */
     if (!node->is_leaf) {
         for (int i = 0; i <= node->key_count; i++) {
             if (node->children[i]) {
-                btree_node_destroy(node->children[i]);
-                node->children[i] = NULL;
+                btree_node_destroy(node->children[i]);  /* Рекурсивный вызов */
+                node->children[i] = NULL;  /* Обнуляем указатель после удаления */
             }
         }
     }
 
-    free(node->keys);
-    free(node->values);
-    free(node->children);
+    /* Освобождаем все динамические массивы */
+    free(node->keys);      /* Освобождаем массив ключей */
+    free(node->values);    /* Освобождаем массив значений */
+    free(node->children);  /* Освобождаем массив потомков */
+
+    /* Освобождаем сам узел */
     free(node);
 }
 
-int
-btree_node_find_key(BTreeNode* node, int key)
+/*
+ * ПОИСК КЛЮЧА В УЗЛЕ (бинарный поиск)
+ *
+ * Ищет ключ в отсортированном массиве ключей узла.
+ *
+ * Параметры:
+ *   node - указатель на узел
+ *   key  - искомый ключ
+ *
+ * Возвращает: индекс ключа в массиве или -1, если ключ не найден
+ *
+ * Сложность: O(log n), где n - количество ключей в узле
+ */
+int btree_node_find_key(BTreeNode* node, int key)
 {
+    /* Проверяем, что узел существует и содержит ключи */
     if (!node || node->key_count == 0) return -1;
 
-    int left = 0;
-    int right = node->key_count - 1;
+    /* Бинарный поиск по отсортированному массиву */
+    int left = 0;                /* Левая граница поиска */
+    int right = node->key_count - 1;  /* Правая граница поиска */
 
     while (left <= right) {
-        int mid = left + (right - left) / 2;
-        if (node->keys[mid] == key) return mid;
-        if (node->keys[mid] < key) left = mid + 1;
-        else right = mid - 1;
+        int mid = left + (right - left) / 2;  /* Находим середину */
+
+        if (node->keys[mid] == key) {
+            return mid;  /* Ключ найден - возвращаем индекс */
+        }
+
+        if (node->keys[mid] < key) {
+            left = mid + 1;  /* Ищем в правой половине */
+        }
+        else {
+            right = mid - 1;  /* Ищем в левой половине */
+        }
     }
-    return -1;
+
+    return -1;  /* Ключ не найден */
 }
 
-int
-btree_node_find_insert_pos(BTreeNode* node, int key)
+/*
+ * ПОИСК ПОЗИЦИИ ДЛЯ ВСТАВКИ КЛЮЧА
+ *
+ * Находит позицию, куда нужно вставить новый ключ,
+ * чтобы массив остался отсортированным.
+ *
+ * Параметры:
+ *   node - указатель на узел
+ *   key  - ключ для вставки
+ *
+ * Возвращает: индекс для вставки (позиция первого ключа >= key)
+ *
+ * Сложность: O(n), где n - количество ключей в узле
+ */
+int btree_node_find_insert_pos(BTreeNode* node, int key)
 {
-    if (!node) return 0;
+    if (!node) return 0;  /* Если узел NULL - позиция 0 */
 
     int i = 0;
+
+    /*
+     * Идём по ключам, пока не найдём первый ключ,
+     * который больше или равен вставляемому.
+     * Все ключи до этой позиции меньше key.
+     */
     while (i < node->key_count && node->keys[i] < key) {
-        i++;
+        i++;  /* Переходим к следующему ключу */
     }
-    return i;
+
+    return i;  /* Возвращаем позицию для вставки */
 }
